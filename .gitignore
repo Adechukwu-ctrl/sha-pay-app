@@ -117,3 +117,11 @@ backend/backups/
 *.sqlite
 *.sqlite3
 *.db
+
+# Executable and installer files
+*.exe
+*.msi
+*.dmg
+*.pkg
+*.deb
+*.rpm
