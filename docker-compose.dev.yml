@@ -1,0 +1,104 @@
+version: '3.8'
+
+services:
+  # Backend API Service (Development)
+  backend-dev:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - DB_HOST=postgres-dev
+      - DB_PORT=5432
+      - DB_NAME=sha_pay_dev
+      - DB_USER=sha_pay_user
+      - DB_PASSWORD=sha_pay_password
+      - REDIS_HOST=redis-dev
+      - REDIS_PORT=6379
+    depends_on:
+      - postgres-dev
+      - redis-dev
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+      - ./backend/logs:/app/logs
+      - ./backend/uploads:/app/uploads
+    networks:
+      - sha_pay_dev_network
+    restart: unless-stopped
+    command: npm run dev
+
+  # PostgreSQL Database (Development)
+  postgres-dev:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=sha_pay_dev
+      - POSTGRES_USER=sha_pay_user
+      - POSTGRES_PASSWORD=sha_pay_password
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+      - ./backend/database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - sha_pay_dev_network
+    restart: unless-stopped
+
+  # Redis Cache (Development)
+  redis-dev:
+    image: redis:7-alpine
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_dev_data:/data
+    networks:
+      - sha_pay_dev_network
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+
+  # pgAdmin for Database Management
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@shapay.com
+      - PGADMIN_DEFAULT_PASSWORD=admin123
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres-dev
+    networks:
+      - sha_pay_dev_network
+    restart: unless-stopped
+
+  # Redis Commander for Redis Management
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    environment:
+      - REDIS_HOSTS=local:redis-dev:6379
+    ports:
+      - "8081:8081"
+    depends_on:
+      - redis-dev
+    networks:
+      - sha_pay_dev_network
+    restart: unless-stopped
+
+  # Mailhog for Email Testing
+  mailhog:
+    image: mailhog/mailhog:latest
+    ports:
+      - "1025:1025"  # SMTP server
+      - "8025:8025"  # Web UI
+    networks:
+      - sha_pay_dev_network
+    restart: unless-stopped
+
+volumes:
+  postgres_dev_data:
+  redis_dev_data:
+
+networks:
+  sha_pay_dev_network:
+    driver: bridge

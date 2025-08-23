@@ -1,0 +1,84 @@
+{
+  "cli": {
+    "version": ">= 16.17.4",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "env": {
+        "NODE_ENV": "development",
+        "EXPO_PUBLIC_ENVIRONMENT": "development",
+        "EXPO_PUBLIC_API_BASE_URL": "http://localhost:3000/api",
+        "EXPO_PUBLIC_WS_BASE_URL": "ws://localhost:3000",
+        "EXPO_PUBLIC_DEBUG_MODE": "true",
+        "EXPO_PUBLIC_ENABLE_ANALYTICS": "false",
+        "EXPO_PUBLIC_ENABLE_CRASH_REPORTING": "false",
+        "EXPO_PUBLIC_ENABLE_SSL_PINNING": "false",
+        "EXPO_PUBLIC_ENABLE_ROOT_DETECTION": "false"
+      },
+      "android": {
+        "buildType": "apk",
+        "gradleCommand": ":app:assembleDebug"
+      },
+      "ios": {
+        "buildConfiguration": "Debug"
+      }
+    },
+    "preview": {
+      "distribution": "internal",
+      "env": {
+        "NODE_ENV": "staging",
+        "EXPO_PUBLIC_ENVIRONMENT": "staging",
+        "EXPO_PUBLIC_API_BASE_URL": "https://staging-api.shapay.ng/api",
+        "EXPO_PUBLIC_WS_BASE_URL": "wss://staging-api.shapay.ng",
+        "EXPO_PUBLIC_DEBUG_MODE": "false",
+        "EXPO_PUBLIC_ENABLE_ANALYTICS": "true",
+        "EXPO_PUBLIC_ENABLE_CRASH_REPORTING": "true",
+        "EXPO_PUBLIC_ENABLE_SSL_PINNING": "false",
+        "EXPO_PUBLIC_ENABLE_ROOT_DETECTION": "false"
+      },
+      "android": {
+        "buildType": "apk"
+      },
+      "ios": {
+        "buildConfiguration": "Release"
+      }
+    },
+    "production": {
+      "autoIncrement": true,
+      "env": {
+        "NODE_ENV": "production",
+        "EXPO_PUBLIC_ENVIRONMENT": "production",
+        "EXPO_PUBLIC_API_BASE_URL": "https://api.shapay.ng/api",
+        "EXPO_PUBLIC_WS_BASE_URL": "wss://api.shapay.ng",
+        "EXPO_PUBLIC_DEBUG_MODE": "false",
+        "EXPO_PUBLIC_ENABLE_ANALYTICS": "true",
+        "EXPO_PUBLIC_ENABLE_CRASH_REPORTING": "true",
+        "EXPO_PUBLIC_ENABLE_SSL_PINNING": "true",
+        "EXPO_PUBLIC_ENABLE_ROOT_DETECTION": "true"
+      },
+      "android": {
+        "buildType": "aab",
+        "gradleCommand": ":app:bundleRelease"
+      },
+      "ios": {
+        "buildConfiguration": "Release"
+      }
+    }
+  },
+  "submit": {
+    "production": {
+      "android": {
+        "serviceAccountKeyPath": "./android/service-account-key.json",
+        "track": "internal"
+      },
+      "ios": {
+        "appleId": "your-apple-id@example.com",
+        "ascAppId": "1234567890",
+        "appleTeamId": "ABCDEFGHIJ"
+      }
+    }
+  }
+}

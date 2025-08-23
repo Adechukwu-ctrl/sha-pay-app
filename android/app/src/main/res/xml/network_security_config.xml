@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">api.stripe.com</domain>
+        <domain includeSubdomains="true">api.paystack.co</domain>
+        <domain includeSubdomains="true">your-production-api.com</domain>
+    </domain-config>
+    
+    <!-- Allow cleartext traffic for development/staging -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">localhost</domain>
+        <domain includeSubdomains="true">10.0.2.2</domain>
+        <domain includeSubdomains="true">192.168.1.1</domain>
+    </domain-config>
+    
+    <!-- Certificate pinning for production APIs -->
+    <domain-config>
+        <domain includeSubdomains="true">api.stripe.com</domain>
+        <pin-set expiration="2026-01-01">
+            <pin digest="SHA-256">AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</pin>
+        </pin-set>
+    </domain-config>
+</network-security-config>

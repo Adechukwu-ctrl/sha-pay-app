@@ -1,0 +1,99 @@
+{
+  "name": "sha-pay-backend",
+  "description": "Sha Pay - Digital Payment Platform Backend API",
+  "repository": "https://github.com/your-username/sha-pay",
+  "logo": "https://node-js-sample.herokuapp.com/node.png",
+  "keywords": ["node", "express", "sequelize", "payment", "api"],
+  "image": "heroku/nodejs",
+  "stack": "heroku-22",
+  "buildpacks": [
+    {
+      "url": "heroku/nodejs"
+    }
+  ],
+  "formation": {
+    "web": {
+      "quantity": 1,
+      "size": "basic"
+    }
+  },
+  "addons": [
+    {
+      "plan": "heroku-postgresql:mini",
+      "as": "DATABASE"
+    },
+    {
+      "plan": "papertrail:choklad",
+      "as": "PAPERTRAIL"
+    }
+  ],
+  "env": {
+    "NODE_ENV": {
+      "description": "Node environment",
+      "value": "production"
+    },
+    "JWT_SECRET": {
+      "description": "JWT secret key for authentication",
+      "generator": "secret"
+    },
+    "ENCRYPTION_KEY": {
+      "description": "Encryption key for sensitive data",
+      "generator": "secret"
+    },
+    "CLOUDINARY_CLOUD_NAME": {
+      "description": "Cloudinary cloud name for file uploads"
+    },
+    "CLOUDINARY_API_KEY": {
+      "description": "Cloudinary API key"
+    },
+    "CLOUDINARY_API_SECRET": {
+      "description": "Cloudinary API secret"
+    },
+    "EMAIL_HOST": {
+      "description": "SMTP host for email service",
+      "value": "smtp.gmail.com"
+    },
+    "EMAIL_PORT": {
+      "description": "SMTP port",
+      "value": "587"
+    },
+    "EMAIL_USER": {
+      "description": "Email username for SMTP"
+    },
+    "EMAIL_PASS": {
+      "description": "Email password for SMTP"
+    },
+    "PAYSTACK_SECRET_KEY": {
+      "description": "Paystack secret key for payment processing"
+    },
+    "PAYSTACK_PUBLIC_KEY": {
+      "description": "Paystack public key"
+    },
+    "FLUTTERWAVE_SECRET_KEY": {
+      "description": "Flutterwave secret key"
+    },
+    "FLUTTERWAVE_PUBLIC_KEY": {
+      "description": "Flutterwave public key"
+    },
+    "STORAGE_PROVIDER": {
+      "description": "Storage provider (cloudinary or s3)",
+      "value": "cloudinary"
+    }
+  },
+  "scripts": {
+    "postdeploy": "npm run db:migrate"
+  },
+  "environments": {
+    "test": {
+      "addons": [
+        "heroku-postgresql:mini"
+      ],
+      "env": {
+        "NODE_ENV": "test"
+      },
+      "scripts": {
+        "test": "npm test"
+      }
+    }
+  }
+}
