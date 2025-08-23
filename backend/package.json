@@ -25,10 +25,10 @@
     "docker:compose:up": "docker-compose up -d",
     "docker:compose:down": "docker-compose down",
     "health-check": "node healthcheck.js",
-    "prod:start": "set NODE_ENV=production && node server.js",
-    "prod:test": "set NODE_ENV=production && node scripts/test-database-connection.js",
+    "prod:start": "NODE_ENV=production node server.js",
+    "prod:test": "NODE_ENV=production node scripts/test-database-connection.js",
     "prod:backup": "node scripts/backup-strategy.js",
-    "prod:migrate": "set NODE_ENV=production && node scripts/setup-cloud-database.js",
+    "prod:migrate": "NODE_ENV=production node scripts/setup-cloud-database.js",
     "prod:deploy-check": "npm run prod:test && npm run health-check",
     "prod:readiness": "node scripts/production-readiness-check.js"
   },

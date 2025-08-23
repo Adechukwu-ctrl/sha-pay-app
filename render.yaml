@@ -1,0 +1,60 @@
+services:
+  - type: web
+    name: sha-pay-backend
+    env: node
+    region: oregon
+    plan: free
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm run prod:start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: DATABASE_URL
+        fromDatabase:
+          name: sha-pay-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 15m
+      - key: JWT_REFRESH_EXPIRES_IN
+        value: 7d
+      - key: FRONTEND_URL
+        value: https://sha-pay-frontend.onrender.com
+      - key: EMAIL_SERVICE
+        value: smtp
+      - key: UPLOAD_PATH
+        value: ./uploads
+      - key: MAX_FILE_SIZE
+        value: 5242880
+      - key: RATE_LIMIT_WINDOW_MS
+        value: 900000
+      - key: RATE_LIMIT_MAX_REQUESTS
+        value: 100
+      - key: AUTH_RATE_LIMIT_MAX
+        value: 5
+      - key: REGISTRATION_RATE_LIMIT_MAX
+        value: 3
+      - key: PASSWORD_RESET_RATE_LIMIT_MAX
+        value: 3
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: EMAIL_SERVICE
+        value: smtp
+      - key: SMS_SERVICE
+        value: twilio
+      - key: EMAIL_FROM
+        value: noreply@shapay.com
+
+databases:
+  - name: sha-pay-db
+    databaseName: sha_pay_production
+    user: sha_pay_user
+    region: oregon
+    plan: free

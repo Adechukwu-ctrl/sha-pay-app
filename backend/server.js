@@ -170,23 +170,28 @@ app.use(errorHandler);
 
 // Initialize services
 const initializeServices = async () => {
-  try {
-    // Initialize email service
-    await emailService.initialize();
-    logger.info('Email service initialized');
-    
-    // Initialize notification service
-    await notificationService.initialize();
-    logger.info('Notification service initialized');
-    
-    // Initialize upload service
-    await uploadService.initialize();
-    logger.info('Upload service initialized');
-    
-  } catch (error) {
-    logger.error('Failed to initialize services:', { message: error.message, stack: error.stack });
-    throw error;
+  const services = [
+    { name: 'Email', service: emailService, critical: false },
+    { name: 'Notification', service: notificationService, critical: false },
+    { name: 'Upload', service: uploadService, critical: false }
+  ];
+  
+  for (const { name, service, critical } of services) {
+    try {
+      await service.initialize();
+      logger.info(`${name} service initialized successfully`);
+    } catch (error) {
+      logger.error(`Failed to initialize ${name} service:`, { message: error.message, stack: error.stack });
+      
+      if (critical) {
+        throw error;
+      } else {
+        logger.warn(`${name} service initialization failed, but continuing startup as it's not critical`);
+      }
+    }
   }
+  
+  logger.info('Service initialization completed');
 };
 
 // Start server
