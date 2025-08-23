@@ -39,14 +39,14 @@ const getDevelopmentWSURL = () => {
 const API_URLS = {
   development: getDevelopmentURL(),
   staging: getEnvVar('STAGING_API_BASE_URL', 'https://staging-api.shapay.ng/api'),
-  production: getEnvVar('API_BASE_URL', 'https://sha-pay-backend.glitch.me/api'),
+  production: getEnvVar('API_BASE_URL', 'https://sha-pay-backend.onrender.com/api'),
 };
 
 // WebSocket URLs
 const WS_URLS = {
   development: getDevelopmentWSURL(),
   staging: getEnvVar('STAGING_WS_BASE_URL', 'wss://staging-api.shapay.ng'),
-  production: getEnvVar('WS_BASE_URL', 'wss://sha-pay-backend.glitch.me'),
+  production: getEnvVar('WS_BASE_URL', 'wss://sha-pay-backend.onrender.com'),
 };
 
 // Export base URLs
