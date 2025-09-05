@@ -35,11 +35,30 @@ const getDevelopmentWSURL = () => {
   }
 };
 
-// Base URLs for different environments
+// Base URLs for different environments with fallback support
 const API_URLS = {
   development: getDevelopmentURL(),
   staging: getEnvVar('STAGING_API_BASE_URL', 'https://staging-api.shapay.ng/api'),
   production: getEnvVar('API_BASE_URL', 'https://sha-pay-backend.onrender.com/api'),
+};
+
+// Fallback URLs for production environment
+const FALLBACK_API_URLS = {
+  production: [
+    'https://sha-pay-backend.onrender.com/api',
+    'http://localhost:3001/api',
+    'https://sha-pay-api-backup.herokuapp.com/api', // Backup URL if available
+    'http://localhost:3000/api' // Local fallback for development testing
+  ],
+  staging: [
+    'https://staging-api.shapay.ng/api',
+    'http://localhost:3001/api'
+  ],
+  development: [
+    getDevelopmentURL(),
+    'http://localhost:3001/api',
+    'http://127.0.0.1:3001/api'
+  ]
 };
 
 // WebSocket URLs
@@ -52,6 +71,34 @@ const WS_URLS = {
 // Export base URLs
 export const API_BASE_URL = API_URLS[ENV];
 export const WS_BASE_URL = WS_URLS[ENV];
+export const FALLBACK_URLS = FALLBACK_API_URLS[ENV] || [API_URLS[ENV]];
+
+// Utility function to get next fallback URL
+export const getNextFallbackUrl = (currentIndex = 0) => {
+  const fallbacks = FALLBACK_URLS;
+  return currentIndex < fallbacks.length - 1 ? fallbacks[currentIndex + 1] : null;
+};
+
+// Health check function
+export const checkApiHealth = async (baseUrl) => {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT.HEALTH_CHECK);
+    
+    const response = await fetch(`${baseUrl}/health`, {
+      method: 'GET',
+      signal: controller.signal,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    clearTimeout(timeoutId);
+    return response.ok;
+  } catch (error) {
+    return false;
+  }
+};
 
 // Export environment configuration
 export const APP_CONFIG = {
@@ -207,6 +254,17 @@ export const REQUEST_TIMEOUT = {
   DEFAULT: 30000, // 30 seconds
   UPLOAD: 120000, // 2 minutes for file uploads
   DOWNLOAD: 60000, // 1 minute for downloads
+  RETRY: 10000, // 10 seconds for retry attempts
+  HEALTH_CHECK: 5000, // 5 seconds for health checks
+};
+
+// Retry configuration
+export const RETRY_CONFIG = {
+  MAX_RETRIES: 3,
+  RETRY_DELAY: 2000, // 2 seconds
+  BACKOFF_MULTIPLIER: 1.5,
+  RETRY_ON_NETWORK_ERROR: true,
+  RETRY_ON_TIMEOUT: true,
 };
 
 // HTTP Status Codes
@@ -240,6 +298,9 @@ export const ERROR_MESSAGES = {
   NOT_FOUND: 'The requested resource was not found.',
   TIMEOUT: 'Request timeout. Please try again.',
   UNKNOWN_ERROR: 'An unknown error occurred. Please try again.',
+  SERVICE_UNAVAILABLE: 'Service is temporarily unavailable. We\'re working to restore it.',
+  BACKEND_UNREACHABLE: 'Unable to connect to our servers. Please try again in a few moments.',
+  FALLBACK_MODE: 'Running in offline mode. Some features may be limited.',
 };
 
 // Success Messages

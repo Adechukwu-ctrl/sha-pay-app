@@ -161,3 +161,5 @@ export { default as Modal, ConfirmationModal, ActionSheetModal } from './Modal';
 export { default as Toast, useToast, ToastContainer } from './Toast';
 export { default as Input } from './Input';
 export { default as Button, IconButton, FloatingActionButton, ButtonGroup } from './Button';
+export { default as ErrorBoundary } from './ErrorBoundary';
+export { default as NetworkStatus } from './NetworkStatus';

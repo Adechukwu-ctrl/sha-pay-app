@@ -123,7 +123,33 @@ class AuthService {
         status: error.status,
         data: error.data
       });
-      throw new Error(error.message || 'Registration failed');
+      
+      // Handle specific network errors with user-friendly messages
+      if (error.message && (
+        error.message.includes('unreachable') ||
+        error.message.includes('timeout') ||
+        error.message.includes('Network error')
+      )) {
+        throw new Error('Unable to connect to our servers. Please check your internet connection and try again in a few moments.');
+      }
+      
+      if (error.message && error.message.includes('Service is temporarily unavailable')) {
+        throw new Error('Our registration service is temporarily unavailable. Please try again in a few minutes.');
+      }
+      
+      // Handle validation errors
+      if (error.status === 400 || error.status === 422) {
+        const errorData = error.data;
+        if (errorData && errorData.message) {
+          throw new Error(errorData.message);
+        }
+        if (errorData && errorData.errors) {
+          const firstError = Object.values(errorData.errors)[0];
+          throw new Error(Array.isArray(firstError) ? firstError[0] : firstError);
+        }
+      }
+      
+      throw new Error(error.message || 'Registration failed. Please try again.');
     }
   }
 

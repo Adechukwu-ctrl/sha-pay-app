@@ -9,7 +9,15 @@ const logger = winston.createLogger({
     winston.format.json()
   ),
   defaultMeta: { service: 'sha-pay-backend' },
-  transports: [
+  transports: process.env.NODE_ENV === 'production' ? [
+    // In production, use console logging only
+    new winston.transports.Console({
+      format: winston.format.combine(
+        winston.format.colorize(),
+        winston.format.simple()
+      )
+    })
+  ] : [
     new winston.transports.File({ 
       filename: process.env.ERROR_LOG_FILE || 'logs/error.log',
       level: 'error'

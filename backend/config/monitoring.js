@@ -2,9 +2,9 @@ const winston = require('winston');
 const path = require('path');
 const fs = require('fs');
 
-// Ensure logs directory exists
+// Ensure logs directory exists (only in development)
 const logsDir = path.join(__dirname, '..', 'logs');
-if (!fs.existsSync(logsDir)) {
+if (process.env.NODE_ENV !== 'production' && !fs.existsSync(logsDir)) {
   fs.mkdirSync(logsDir, { recursive: true });
 }
 
@@ -41,8 +41,13 @@ const logger = winston.createLogger({
     service: 'sha-pay-backend',
     environment: process.env.NODE_ENV || 'development'
   },
-  transports: [
-    // Error logs
+  transports: process.env.NODE_ENV === 'production' ? [
+    // In production, use console logging only
+    new winston.transports.Console({
+      format: consoleFormat
+    })
+  ] : [
+    // In development, use file logging
     new winston.transports.File({
       filename: path.join(logsDir, 'error.log'),
       level: 'error',
@@ -67,14 +72,22 @@ const logger = winston.createLogger({
   ],
   
   // Handle exceptions
-  exceptionHandlers: [
+  exceptionHandlers: process.env.NODE_ENV === 'production' ? [
+    new winston.transports.Console({
+      format: consoleFormat
+    })
+  ] : [
     new winston.transports.File({
       filename: path.join(logsDir, 'exceptions.log')
     })
   ],
   
   // Handle rejections
-  rejectionHandlers: [
+  rejectionHandlers: process.env.NODE_ENV === 'production' ? [
+    new winston.transports.Console({
+      format: consoleFormat
+    })
+  ] : [
     new winston.transports.File({
       filename: path.join(logsDir, 'rejections.log')
     })

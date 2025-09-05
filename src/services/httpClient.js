@@ -10,6 +10,10 @@ import {
   HTTP_STATUS,
   ERROR_MESSAGES,
   DEFAULT_HEADERS,
+  FALLBACK_URLS,
+  RETRY_CONFIG,
+  getNextFallbackUrl,
+  checkApiHealth,
 } from '../config/api';
 
 // Storage keys
@@ -22,12 +26,39 @@ const STORAGE_KEYS = {
 class HttpClient {
   constructor() {
     this.baseURL = API_BASE_URL;
+    this.fallbackUrls = FALLBACK_URLS;
+    this.currentUrlIndex = 0;
     this.timeout = REQUEST_TIMEOUT.DEFAULT;
     this.defaultHeaders = DEFAULT_HEADERS;
     this.interceptors = {
       request: [],
       response: [],
     };
+    this.isOfflineMode = false;
+  }
+
+  // Switch to next fallback URL
+  switchToFallbackUrl() {
+    if (this.currentUrlIndex < this.fallbackUrls.length - 1) {
+      this.currentUrlIndex++;
+      this.baseURL = this.fallbackUrls[this.currentUrlIndex];
+      console.log(`🔄 Switched to fallback URL: ${this.baseURL}`);
+      return true;
+    }
+    return false;
+  }
+
+  // Reset to primary URL
+  resetToPrimaryUrl() {
+    this.currentUrlIndex = 0;
+    this.baseURL = this.fallbackUrls[0];
+    this.isOfflineMode = false;
+    console.log(`🔄 Reset to primary URL: ${this.baseURL}`);
+  }
+
+  // Check if current URL is healthy
+  async checkCurrentUrlHealth() {
+    return await checkApiHealth(this.baseURL);
   }
 
   // Add request interceptor
@@ -149,7 +180,136 @@ class HttpClient {
       return new HttpError(0, ERROR_MESSAGES.NETWORK_ERROR);
     }
 
+    // Check for network connectivity issues
+    if (error.message && (
+      error.message.includes('Failed to fetch') ||
+      error.message.includes('Network request failed') ||
+      error.message.includes('ERR_NETWORK') ||
+      error.message.includes('ERR_INTERNET_DISCONNECTED')
+    )) {
+      return new HttpError(0, ERROR_MESSAGES.BACKEND_UNREACHABLE);
+    }
+
     return new HttpError(0, ERROR_MESSAGES.UNKNOWN_ERROR);
+  }
+
+  // Retry request with exponential backoff
+  async retryRequest(url, options, attempt = 1) {
+    const delay = RETRY_CONFIG.RETRY_DELAY * Math.pow(RETRY_CONFIG.BACKOFF_MULTIPLIER, attempt - 1);
+    
+    console.log(`⏳ Retrying request (attempt ${attempt}/${RETRY_CONFIG.MAX_RETRIES}) after ${delay}ms delay`);
+    
+    await new Promise(resolve => setTimeout(resolve, delay));
+    
+    return this.makeRequest(url, options, attempt);
+  }
+
+  // Make request with fallback support
+  async makeRequest(url, options, retryAttempt = 0) {
+    const {
+      method = 'GET',
+      headers: customHeaders = {},
+      body,
+      timeout = this.timeout,
+      skipAuth = false,
+      retryOnAuthFailure = true,
+      ...otherOptions
+    } = options;
+
+    // Build full URL
+    const fullUrl = url.startsWith('http') ? url : `${this.baseURL}${url}`;
+
+    // Build headers
+    const headers = skipAuth 
+      ? { ...this.defaultHeaders, ...customHeaders }
+      : await this.buildHeaders(customHeaders);
+
+    // Create request config
+    let config = {
+      method,
+      headers,
+      body,
+      ...otherOptions,
+    };
+
+    // Apply request interceptors
+    config = await this.applyRequestInterceptors(config);
+
+    // Create abort controller for timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+    try {
+      console.log(`🌐 Making ${method} request to: ${fullUrl}`);
+      
+      // Make request
+      const response = await fetch(fullUrl, {
+        ...config,
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      // Handle 401 Unauthorized
+      if (response.status === HTTP_STATUS.UNAUTHORIZED && retryOnAuthFailure && !skipAuth) {
+        try {
+          await this.refreshToken();
+          // Retry request with new token
+          return this.makeRequest(url, { ...options, retryOnAuthFailure: false }, retryAttempt);
+        } catch (refreshError) {
+          // Refresh failed, redirect to login
+          await this.removeToken();
+          throw new HttpError(HTTP_STATUS.UNAUTHORIZED, ERROR_MESSAGES.UNAUTHORIZED);
+        }
+      }
+
+      // Handle response
+      let result = await this.handleResponse(response);
+      
+      // Apply response interceptors
+      result = await this.applyResponseInterceptors(result);
+      
+      // Reset to primary URL on successful request
+      if (this.currentUrlIndex > 0) {
+        console.log('✅ Request successful, resetting to primary URL');
+        this.resetToPrimaryUrl();
+      }
+      
+      return result;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      
+      const handledError = this.handleError(error);
+      
+      // Check if we should retry with fallback URL
+      const shouldRetryWithFallback = (
+        (handledError.message.includes('timeout') || 
+         handledError.message.includes('Network') ||
+         handledError.message.includes('unreachable')) &&
+        this.switchToFallbackUrl()
+      );
+      
+      // Check if we should retry with same URL
+      const shouldRetryWithSameUrl = (
+        retryAttempt < RETRY_CONFIG.MAX_RETRIES &&
+        (RETRY_CONFIG.RETRY_ON_NETWORK_ERROR || RETRY_CONFIG.RETRY_ON_TIMEOUT)
+      );
+      
+      if (shouldRetryWithFallback) {
+        console.log(`🔄 Retrying with fallback URL: ${this.baseURL}`);
+        return this.makeRequest(url, options, 0); // Reset retry attempt for new URL
+      } else if (shouldRetryWithSameUrl) {
+        return this.retryRequest(url, options, retryAttempt + 1);
+      }
+      
+      // All retries exhausted
+      if (retryAttempt >= RETRY_CONFIG.MAX_RETRIES) {
+        console.error(`❌ All retry attempts exhausted for ${fullUrl}`);
+        this.isOfflineMode = true;
+      }
+      
+      throw handledError;
+    }
   }
 
   // Refresh token

@@ -6,7 +6,9 @@ import { store } from './store';
 import AppNavigator from './navigation/AppNavigator';
 import { StatusBar } from 'expo-status-bar';
 import { paperTheme } from './theme';
-import { Platform } from 'react-native';
+import { Platform, View } from 'react-native';
+import ErrorBoundary from './components/ui/ErrorBoundary';
+import NetworkStatus from './components/ui/NetworkStatus';
 
 // Configure icon provider for web
 if (Platform.OS === 'web') {
@@ -35,13 +37,18 @@ export default function App() {
   }, []);
 
   return (
-    <StoreProvider store={store}>
-      <PaperProvider theme={paperTheme}>
-        <NavigationContainer>
-          <StatusBar style="auto" />
-          <AppNavigator />
-        </NavigationContainer>
-      </PaperProvider>
-    </StoreProvider>
+    <ErrorBoundary>
+      <StoreProvider store={store}>
+        <PaperProvider theme={paperTheme}>
+          <NavigationContainer>
+            <View style={{ flex: 1 }}>
+              <NetworkStatus />
+              <StatusBar style="auto" />
+              <AppNavigator />
+            </View>
+          </NavigationContainer>
+        </PaperProvider>
+      </StoreProvider>
+    </ErrorBoundary>
   );
 }

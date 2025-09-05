@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3001;
 
 // Middleware
 app.use(cors());
@@ -152,6 +152,7 @@ app.listen(PORT, () => {
   console.log('\n🔐 Test credentials:');
   console.log('  Email: test@example.com');
   console.log('  Password: password123');
+  console.log('\n⚠️  Note: Frontend is on port 3000, Backend is on port 3001');
 });
 
 module.exports = app;
